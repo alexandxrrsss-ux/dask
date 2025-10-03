@@ -7,8 +7,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         :root {
             --primary: #4361ee;
@@ -1053,50 +1051,6 @@
             color: white;
         }
     </style>
-        /* Agregar estilos para los archivos adjuntos */
-        .file-attachment {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 1rem;
-            background-color: #f8f9fa;
-            border-radius: 10px;
-            margin-bottom: 1rem;
-            transition: var(--transition);
-            cursor: pointer;
-        }
-
-        .file-attachment:hover {
-            background-color: #e9ecef;
-            transform: translateY(-2px);
-        }
-
-        .file-icon {
-            color: var(--primary);
-            font-size: 1.5rem;
-        }
-
-        .file-name {
-            flex: 1;
-            font-weight: 500;
-        }
-
-        .file-size {
-            color: var(--gray);
-            font-size: 0.9rem;
-        }
-
-        .file-download {
-            color: var(--primary);
-            font-size: 1.2rem;
-            transition: var(--transition);
-        }
-
-        .file-download:hover {
-            color: var(--secondary);
-            transform: scale(1.1);
-        }
-    </style>
 </head>
 <body>
     <!-- Login Screen -->
@@ -1707,99 +1661,6 @@
         </div>
     </div>
 
-    <!-- Report Task Modal -->
-    <div class="modal-overlay" id="reportTaskModal">
-        <div class="modal">
-            <div class="modal-header">
-                <div class="modal-title">Reportar Problema en Tarea</div>
-                <button class="modal-close" id="closeReportTaskModal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="reportTaskForm">
-                    <input type="hidden" id="reportTaskId">
-                    <div class="form-group">
-                        <label class="form-label">Tipo de reporte</label>
-                        <select class="form-select" id="reportTaskType">
-                            <option value="problem">Problema en tarea</option>
-                            <option value="material">Solicitud de material</option>
-                            <option value="equipment">Solicitud de equipo</option>
-                            <option value="assistance">Solicitud de asistencia</option>
-                            <option value="other">Otro tipo de reporte</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Título del reporte</label>
-                        <input type="text" class="form-control" id="reportTaskTitle" placeholder="Ej: Falta material para completar la tarea" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Descripción detallada</label>
-                        <textarea class="form-control" id="reportTaskDescription" rows="5" placeholder="Describe el problema, los materiales que necesitas o la asistencia requerida..." required></textarea>
-                    </div>
-
-                    <!-- Sección específica para materiales -->
-                    <div id="reportMaterialSection" style="display: none;">
-                        <div class="material-details">
-                            <h4 style="margin-bottom: 1rem; color: var(--dark);">Detalles del Material Solicitado</h4>
-                            <div class="form-group">
-                                <label class="form-label">Material necesario</label>
-                                <input type="text" class="form-control" id="reportMaterialName" placeholder="Ej: Tornillos de 2 pulgadas, cable eléctrico, etc.">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Cantidad requerida</label>
-                                <input type="text" class="form-control" id="reportMaterialQuantity" placeholder="Ej: 50 unidades, 10 metros, 5 cajas">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Especificaciones técnicas</label>
-                                <textarea class="form-control" id="reportMaterialSpecs" rows="2" placeholder="Especificaciones, medidas, tipo, modelo, etc."></textarea>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Nivel de urgencia</label>
-                        <select class="form-select" id="reportTaskUrgency">
-                            <option value="low">Baja (Puede esperar varios días)</option>
-                            <option value="medium">Media (Necesario en 1-2 días)</option>
-                            <option value="high">Alta (Necesario hoy)</option>
-                            <option value="urgent">Urgente (Inmediato - Detiene el trabajo)</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">¿Este reporte detiene el avance de la tarea?</label>
-                        <select class="form-select" id="reportTaskBlocksProgress">
-                            <option value="no">No, puedo continuar con otras actividades</option>
-                            <option value="partial">Parcialmente, reduce la productividad</option>
-                            <option value="complete">Sí, detiene completamente el trabajo</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Fecha límite requerida</label>
-                        <input type="date" class="form-control" id="reportTaskRequiredDate">
-                        <small style="color: var(--gray); margin-top: 5px; display: block;">
-                            ¿Para cuándo necesitas resolver este reporte?
-                        </small>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Adjuntar archivo (opcional)</label>
-                        <input type="file" class="form-control" id="reportTaskFile">
-                        <small style="color: var(--gray); margin-top: 5px; display: block;">
-                            Puedes adjuntar fotos, documentos o especificaciones
-                        </small>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-outline" id="cancelReportTaskBtn">Cancelar</button>
-                <button class="btn btn-primary" id="saveReportTaskBtn">Enviar Reporte</button>
-            </div>
-        </div>
-    </div>
-
     <!-- JavaScript -->
     <script>
         // ==================== CONFIGURACIÓN INICIAL ====================
@@ -2040,28 +1901,6 @@
                 const assignee = users.find(u => u.username === task.assignee);
                 const card = document.createElement('div');
                 card.className = `task-card ${task.urgency}`;
-                
-                // Mostrar archivos adjuntos si existen
-                let attachmentsHtml = '';
-                if (task.attachments && task.attachments.length > 0) {
-                    attachmentsHtml = `
-                        <div class="task-meta">
-                            <div class="task-meta-item">
-                                <i class="fas fa-paperclip"></i>
-                                <span>Archivos adjuntos:</span>
-                            </div>
-                        </div>
-                        ${task.attachments.map(attachment => `
-                            <div class="file-attachment" onclick="downloadFile('${attachment.name}', '${attachment.content}')">
-                                <i class="fas fa-file file-icon"></i>
-                                <div class="file-name">${attachment.name}</div>
-                                <div class="file-size">${formatFileSize(attachment.size)}</div>
-                                <i class="fas fa-download file-download"></i>
-                            </div>
-                        `).join('')}
-                    `;
-                }
-                
                 card.innerHTML = `
                     <div class="task-header">
                         <div>
@@ -2084,7 +1923,6 @@
                             <span>${getStatusText(task.status)}</span>
                         </div>
                     </div>
-                    ${attachmentsHtml}
                     <div class="task-actions">
                         <select class="form-select task-status" data-task-id="${task.id}">
                             <option value="pending" ${task.status === 'pending' ? 'selected' : ''}>Pendiente</option>
@@ -2103,13 +1941,6 @@
                 select.addEventListener('change', function() {
                     const taskId = this.getAttribute('data-task-id');
                     updateTaskStatus(taskId, this.value);
-                });
-            });
-
-            document.querySelectorAll('.report-problem-btn').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const taskId = this.getAttribute('data-task-id');
-                    openReportTaskModal(taskId);
                 });
             });
         }
@@ -2168,7 +1999,6 @@
             const taskStartDate = document.getElementById('taskStartDate').value;
             const taskDueDate = document.getElementById('taskDueDate').value;
             const taskUrgency = document.getElementById('taskUrgency').value;
-            const taskFile = document.getElementById('taskFile').files[0];
 
             if (!taskName || !taskDescription || !taskAssignee) {
                 showNotification('Completa todos los campos obligatorios', 'warning');
@@ -2187,38 +2017,15 @@
                 createdBy: currentUser.username
             };
 
-            // Procesar archivo adjunto si existe
-            if (taskFile) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    newTask.attachments = [{
-                        name: taskFile.name,
-                        size: taskFile.size,
-                        type: taskFile.type,
-                        content: e.target.result
-                    }];
-                    tasks.push(newTask);
-                    saveTasksToFirebase();
-                    
-                    document.getElementById('addTaskModal').classList.remove('active');
-                    document.getElementById('taskForm').reset();
-                    
-                    updateDashboard();
-                    loadAllTasks();
-                    showNotification('Tarea creada exitosamente', 'success');
-                };
-                reader.readAsDataURL(taskFile);
-            } else {
-                tasks.push(newTask);
-                saveTasksToFirebase();
-                
-                document.getElementById('addTaskModal').classList.remove('active');
-                document.getElementById('taskForm').reset();
-                
-                updateDashboard();
-                loadAllTasks();
-                showNotification('Tarea creada exitosamente', 'success');
-            }
+            tasks.push(newTask);
+            saveTasksToFirebase();
+            
+            document.getElementById('addTaskModal').classList.remove('active');
+            document.getElementById('taskForm').reset();
+            
+            updateDashboard();
+            loadAllTasks();
+            showNotification('Tarea creada exitosamente', 'success');
         }
 
         function openEditTaskModal(taskId) {
@@ -2453,7 +2260,6 @@
             const taskId = document.getElementById('taskSelect').value;
             const blocksProgress = document.getElementById('blocksProgress').value;
             const requiredDate = document.getElementById('requiredDate').value;
-            const fileAttachment = document.getElementById('fileAttachment').files[0];
 
             if (!title || !description) {
                 showNotification('Completa todos los campos obligatorios', 'warning');
@@ -2492,153 +2298,22 @@
                 createdAt: new Date().toISOString()
             };
 
-            // Procesar archivo adjunto si existe
-            if (fileAttachment) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    newReport.attachments = [{
-                        name: fileAttachment.name,
-                        size: fileAttachment.size,
-                        type: fileAttachment.type,
-                        content: e.target.result
-                    }];
-                    reports.push(newReport);
-                    saveReportsToFirebase();
-                    
-                    // Limpiar formulario
-                    document.getElementById('reportTitle').value = '';
-                    document.getElementById('problemDescription').value = '';
-                    document.getElementById('materialName').value = '';
-                    document.getElementById('materialQuantity').value = '';
-                    document.getElementById('materialSpecs').value = '';
-                    document.getElementById('equipmentType').value = '';
-                    document.getElementById('equipmentTime').value = '';
-                    document.getElementById('equipmentSpecs').value = '';
-                    document.getElementById('requiredDate').value = '';
-                    document.getElementById('fileAttachment').value = '';
-                    
-                    showNotification('Reporte enviado exitosamente', 'success');
-                    updateReportsBadge();
-                };
-                reader.readAsDataURL(fileAttachment);
-            } else {
-                reports.push(newReport);
-                saveReportsToFirebase();
-                
-                // Limpiar formulario
-                document.getElementById('reportTitle').value = '';
-                document.getElementById('problemDescription').value = '';
-                document.getElementById('materialName').value = '';
-                document.getElementById('materialQuantity').value = '';
-                document.getElementById('materialSpecs').value = '';
-                document.getElementById('equipmentType').value = '';
-                document.getElementById('equipmentTime').value = '';
-                document.getElementById('equipmentSpecs').value = '';
-                document.getElementById('requiredDate').value = '';
-                
-                showNotification('Reporte enviado exitosamente', 'success');
-                updateReportsBadge();
-            }
-        }
-
-        function openReportTaskModal(taskId) {
-            const task = tasks.find(t => t.id == taskId);
-            if (task) {
-                document.getElementById('reportTaskId').value = task.id;
-                document.getElementById('reportTaskModal').classList.add('active');
-            }
-        }
-
-        function handleReportTaskTypeChange() {
-            const reportType = document.getElementById('reportTaskType').value;
-            const materialSection = document.getElementById('reportMaterialSection');
+            reports.push(newReport);
+            saveReportsToFirebase();
             
-            // Ocultar todas las secciones primero
-            materialSection.style.display = 'none';
+            // Limpiar formulario
+            document.getElementById('reportTitle').value = '';
+            document.getElementById('problemDescription').value = '';
+            document.getElementById('materialName').value = '';
+            document.getElementById('materialQuantity').value = '';
+            document.getElementById('materialSpecs').value = '';
+            document.getElementById('equipmentType').value = '';
+            document.getElementById('equipmentTime').value = '';
+            document.getElementById('equipmentSpecs').value = '';
+            document.getElementById('requiredDate').value = '';
             
-            // Mostrar secciones según el tipo
-            if (reportType === 'material') {
-                materialSection.style.display = 'block';
-            }
-        }
-
-        function handleSaveReportTask() {
-            const taskId = document.getElementById('reportTaskId').value;
-            const title = document.getElementById('reportTaskTitle').value;
-            const description = document.getElementById('reportTaskDescription').value;
-            const type = document.getElementById('reportTaskType').value;
-            const urgency = document.getElementById('reportTaskUrgency').value;
-            const blocksProgress = document.getElementById('reportTaskBlocksProgress').value;
-            const requiredDate = document.getElementById('reportTaskRequiredDate').value;
-            const fileAttachment = document.getElementById('reportTaskFile').files[0];
-
-            if (!title || !description) {
-                showNotification('Completa todos los campos obligatorios', 'warning');
-                return;
-            }
-
-            // Recolectar datos específicos según el tipo de reporte
-            let additionalData = {};
-            
-            if (type === 'material') {
-                additionalData = {
-                    materialName: document.getElementById('reportMaterialName').value,
-                    materialQuantity: document.getElementById('reportMaterialQuantity').value,
-                    materialSpecs: document.getElementById('reportMaterialSpecs').value
-                };
-            } else if (type === 'equipment') {
-                additionalData = {
-                    equipmentType: document.getElementById('reportEquipmentType')?.value || '',
-                    equipmentTime: document.getElementById('reportEquipmentTime')?.value || '',
-                    equipmentSpecs: document.getElementById('reportEquipmentSpecs')?.value || ''
-                };
-            }
-
-            const newReport = {
-                id: generateId(),
-                title,
-                description,
-                type,
-                urgency,
-                taskId: taskId,
-                reporter: currentUser.username,
-                status: 'pending',
-                blocksProgress,
-                requiredDate,
-                additionalData,
-                createdAt: new Date().toISOString()
-            };
-
-            // Procesar archivo adjunto si existe
-            if (fileAttachment) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    newReport.attachments = [{
-                        name: fileAttachment.name,
-                        size: fileAttachment.size,
-                        type: fileAttachment.type,
-                        content: e.target.result
-                    }];
-                    reports.push(newReport);
-                    saveReportsToFirebase();
-                    
-                    document.getElementById('reportTaskModal').classList.remove('active');
-                    document.getElementById('reportTaskForm').reset();
-                    
-                    showNotification('Reporte enviado exitosamente', 'success');
-                    updateReportsBadge();
-                };
-                reader.readAsDataURL(fileAttachment);
-            } else {
-                reports.push(newReport);
-                saveReportsToFirebase();
-                
-                document.getElementById('reportTaskModal').classList.remove('active');
-                document.getElementById('reportTaskForm').reset();
-                
-                showNotification('Reporte enviado exitosamente', 'success');
-                updateReportsBadge();
-            }
+            showNotification('Reporte enviado exitosamente', 'success');
+            updateReportsBadge();
         }
 
         function loadReports() {
@@ -2679,27 +2354,6 @@
                     `;
                 }
 
-                // Mostrar archivos adjuntos si existen
-                let attachmentsHtml = '';
-                if (report.attachments && report.attachments.length > 0) {
-                    attachmentsHtml = `
-                        <div class="task-meta">
-                            <div class="task-meta-item">
-                                <i class="fas fa-paperclip"></i>
-                                <span>Archivos adjuntos:</span>
-                            </div>
-                        </div>
-                        ${report.attachments.map(attachment => `
-                            <div class="file-attachment" onclick="downloadFile('${attachment.name}', '${attachment.content}')">
-                                <i class="fas fa-file file-icon"></i>
-                                <div class="file-name">${attachment.name}</div>
-                                <div class="file-size">${formatFileSize(attachment.size)}</div>
-                                <i class="fas fa-download file-download"></i>
-                            </div>
-                        `).join('')}
-                    `;
-                }
-
                 card.innerHTML = `
                     <div class="report-header">
                         <div class="report-title">${report.title}</div>
@@ -2734,7 +2388,6 @@
                     </div>
                     <div class="report-description">${report.description}</div>
                     ${additionalInfo}
-                    ${attachmentsHtml}
                     ${report.requiredDate ? `
                     <div class="report-meta-item">
                         <i class="fas fa-clock"></i>
@@ -2940,25 +2593,6 @@
             a.click();
             document.body.removeChild(a);
             window.URL.revokeObjectURL(url);
-        }
-
-        // Función para descargar archivos adjuntos
-        function downloadFile(filename, content) {
-            const link = document.createElement('a');
-            link.href = content;
-            link.download = filename;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            showNotification(`Archivo ${filename} descargado`, 'success');
-        }
-
-        function formatFileSize(bytes) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         }
 
         function previewData() {
@@ -3229,19 +2863,6 @@
 
             document.getElementById('updateTaskBtn').addEventListener('click', handleUpdateTask);
 
-            // Report Task Modal
-            document.getElementById('reportTaskType').addEventListener('change', handleReportTaskTypeChange);
-            document.getElementById('closeReportTaskModal').addEventListener('click', () => {
-                document.getElementById('reportTaskModal').classList.remove('active');
-            });
-
-            document.getElementById('cancelReportTaskBtn').addEventListener('click', () => {
-                document.getElementById('reportTaskModal').classList.remove('active');
-                document.getElementById('reportTaskForm').reset();
-            });
-
-            document.getElementById('saveReportTaskBtn').addEventListener('click', handleSaveReportTask);
-
             // Export functionality
             document.getElementById('exportDataBtn').addEventListener('click', exportData);
             document.getElementById('previewDataBtn').addEventListener('click', previewData);
@@ -3265,5 +2886,5 @@
         });
     </script>
 </body>
-
 </html>
+
