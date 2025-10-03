@@ -1,0 +1,2228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaskMaster PRO 🚀</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        /* Tus estilos CSS existentes aquí... */
+        /* (Mantengo todos los estilos existentes) */
+        
+        /* Agregar estilos para los archivos adjuntos */
+        .file-attachment {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 1rem;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .file-attachment:hover {
+            background-color: #e9ecef;
+            transform: translateY(-2px);
+        }
+
+        .file-icon {
+            color: var(--primary);
+            font-size: 1.5rem;
+        }
+
+        .file-name {
+            flex: 1;
+            font-weight: 500;
+        }
+
+        .file-size {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+
+        .file-download {
+            color: var(--primary);
+            font-size: 1.2rem;
+            transition: var(--transition);
+        }
+
+        .file-download:hover {
+            color: var(--secondary);
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-container">
+        <div class="login-card">
+            <div class="login-logo">
+                <i class="fas fa-tasks" style="font-size: 4rem; background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                <h1 style="margin-top: 15px; font-size: 2.2rem;">TaskMaster PRO</h1>
+                <p style="color: var(--gray); margin-top: 5px;">Sistema Seguro de Gestión de Tareas</p>
+            </div>
+            <h2 class="login-title">Iniciar Sesión</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label class="form-label">Usuario</label>
+                    <input type="text" class="form-control" id="username" placeholder="Ingresa tu usuario" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Contraseña</label>
+                    <input type="password" class="form-control" id="password" placeholder="Ingresa tu contraseña" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 1.5rem; padding: 1rem;">
+                    <i class="fas fa-sign-in-alt"></i> Ingresar al Sistema
+                </button>
+            </form>
+            <div style="margin-top: 2rem; text-align: center; color: var(--gray); padding: 1rem; background: #f8f9fa; border-radius: 10px;">
+                <p style="font-weight: 600; margin-bottom: 0.5rem;">Credenciales de prueba:</p>
+                <p>Administrador: <strong>admin</strong> / <strong>admin123</strong></p>
+                <p>Trabajador: <strong>juan</strong> / <strong>juan123</strong></p>
+                <p>Trabajador: <strong>maria</strong> / <strong>maria123</strong></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application -->
+    <div id="app" style="display: none;">
+        <!-- Header -->
+        <header>
+            <div class="container">
+                <div class="header-content">
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <button class="menu-toggle" id="menuToggle">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <div class="logo">
+                            <i class="fas fa-tasks"></i>
+                            <span>TaskMaster PRO</span>
+                        </div>
+                    </div>
+                    <div class="user-info">
+                        <div class="user-avatar" id="userInitials">A</div>
+                        <span id="userName">Administrador</span>
+                        <span id="userRole" style="background: rgba(255,255,255,0.2); padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.8rem;"></span>
+                        <button class="btn btn-outline" id="logoutBtn">
+                            <i class="fas fa-sign-out-alt"></i> <span class="logout-text">Salir</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Layout -->
+        <div class="main-layout">
+            <!-- Sidebar -->
+            <div class="sidebar" id="sidebar">
+                <div class="nav-items">
+                    <div class="nav-item active" data-page="dashboard">
+                        <i class="fas fa-chart-pie"></i>
+                        <span>Dashboard</span>
+                    </div>
+                    <div class="nav-item" data-page="tasks">
+                        <i class="fas fa-tasks"></i>
+                        <span>Mis Tareas</span>
+                    </div>
+                    <div class="nav-item admin-only" data-page="manage-tasks">
+                        <i class="fas fa-cog"></i>
+                        <span>Gestión de Tareas</span>
+                    </div>
+                    <div class="nav-item admin-only" data-page="reports-admin">
+                        <i class="fas fa-flag"></i>
+                        <span>Reportes Recibidos</span>
+                        <span class="badge badge-new" id="reportsBadge" style="margin-left: auto; display: none;">0</span>
+                    </div>
+                    <div class="nav-item" data-page="reports">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>Reportar Problema</span>
+                    </div>
+                    <div class="nav-item admin-only" data-page="users">
+                        <i class="fas fa-users"></i>
+                        <span>Gestión de Usuarios</span>
+                    </div>
+                    <div class="nav-item admin-only" data-page="export">
+                        <i class="fas fa-file-export"></i>
+                        <span>Exportar Actividades</span>
+                    </div>
+                    <div class="nav-item" data-page="change-password">
+                        <i class="fas fa-key"></i>
+                        <span>Cambiar Contraseña</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Area -->
+            <div class="content">
+                <!-- Dashboard Page -->
+                <div id="dashboard" class="page active">
+                    <div class="page-title">
+                        <h1>Dashboard de Gestión</h1>
+                        <div class="date-display" id="currentDate"></div>
+                    </div>
+
+                    <!-- Stats -->
+                    <div class="stats-container">
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-tasks"></i>
+                            </div>
+                            <div class="stat-value" id="totalTasks">0</div>
+                            <div class="stat-label">Total de Tareas</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="stat-value" id="pendingTasks">0</div>
+                            <div class="stat-label">Pendientes</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-spinner"></i>
+                            </div>
+                            <div class="stat-value" id="inProgressTasks">0</div>
+                            <div class="stat-label">En Progreso</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div class="stat-value" id="completedTasks">0</div>
+                            <div class="stat-label">Completadas</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">
+                                <i class="fas fa-flag"></i>
+                            </div>
+                            <div class="stat-value" id="totalReports">0</div>
+                            <div class="stat-label">Reportes Activos</div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Tareas Recientes</div>
+                            <button class="btn btn-primary" id="viewAllTasksBtn">
+                                <i class="fas fa-list"></i> <span class="btn-text">Ver Todas las Tareas</span>
+                            </button>
+                        </div>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Tarea</th>
+                                    <th>Asignada a</th>
+                                    <th>Fecha Límite</th>
+                                    <th>Estado</th>
+                                    <th>Urgencia</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentTasksTable">
+                                <!-- Tasks will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Tasks Page -->
+                <div id="tasks" class="page">
+                    <div class="page-title">
+                        <h1>Mis Tareas</h1>
+                        <div class="tabs">
+                            <div class="tab active" data-tab="all">Todas</div>
+                            <div class="tab" data-tab="pending">Pendientes</div>
+                            <div class="tab" data-tab="in-progress">En Progreso</div>
+                            <div class="tab" data-tab="completed">Completadas</div>
+                        </div>
+                    </div>
+
+                    <div class="tab-content active" id="tab-all">
+                        <div id="myTasksContainer">
+                            <!-- Task cards will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Manage Tasks Page (Admin Only) -->
+                <div id="manage-tasks" class="page">
+                    <div class="page-title">
+                        <h1>Gestión de Tareas</h1>
+                        <div class="btn-group">
+                            <button class="btn btn-primary" id="addTaskBtn">
+                                <i class="fas fa-plus"></i> <span class="btn-text">Nueva Tarea</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Tarea</th>
+                                    <th>Asignada a</th>
+                                    <th>Fecha Límite</th>
+                                    <th>Estado</th>
+                                    <th>Urgencia</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="allTasksTable">
+                                <!-- All tasks will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Reports Admin Page (Admin Only) -->
+                <div id="reports-admin" class="page">
+                    <div class="page-title">
+                        <h1>Reportes Recibidos</h1>
+                        <div class="tabs">
+                            <div class="tab active" data-tab="reports-all">Todos</div>
+                            <div class="tab" data-tab="reports-pending">Pendientes</div>
+                            <div class="tab" data-tab="reports-resolved">Resueltos</div>
+                        </div>
+                    </div>
+
+                    <div class="tab-content active" id="tab-reports-all">
+                        <div id="reportsContainer">
+                            <!-- Reports will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reports Page -->
+                <div id="reports" class="page">
+                    <div class="page-title">
+                        <h1>Reportar Problema o Solicitar Material</h1>
+                    </div>
+
+                    <div class="card">
+                        <div class="form-group">
+                            <label class="form-label">Tipo de reporte</label>
+                            <select class="form-select" id="reportType">
+                                <option value="problem">Problema en tarea</option>
+                                <option value="material">Solicitud de material</option>
+                                <option value="equipment">Solicitud de equipo</option>
+                                <option value="assistance">Solicitud de asistencia</option>
+                                <option value="other">Otro tipo de reporte</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Tarea relacionada</label>
+                            <select class="form-select" id="taskSelect">
+                                <option value="">Selecciona una tarea (opcional)</option>
+                                <!-- Options will be populated dynamically -->
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Título del reporte</label>
+                            <input type="text" class="form-control" id="reportTitle" placeholder="Ej: Falta material para completar la tarea" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Descripción detallada</label>
+                            <textarea class="form-control" id="problemDescription" rows="5" placeholder="Describe el problema, los materiales que necesitas o la asistencia requerida..." required></textarea>
+                        </div>
+
+                        <!-- Sección específica para materiales -->
+                        <div id="materialSection" style="display: none;">
+                            <div class="material-details">
+                                <h4 style="margin-bottom: 1rem; color: var(--dark);">Detalles del Material Solicitado</h4>
+                                <div class="form-group">
+                                    <label class="form-label">Material necesario</label>
+                                    <input type="text" class="form-control" id="materialName" placeholder="Ej: Tornillos de 2 pulgadas, cable eléctrico, etc.">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Cantidad requerida</label>
+                                    <input type="text" class="form-control" id="materialQuantity" placeholder="Ej: 50 unidades, 10 metros, 5 cajas">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Especificaciones técnicas</label>
+                                    <textarea class="form-control" id="materialSpecs" rows="2" placeholder="Especificaciones, medidas, tipo, modelo, etc."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sección específica para equipos -->
+                        <div id="equipmentSection" style="display: none;">
+                            <div class="material-details">
+                                <h4 style="margin-bottom: 1rem; color: var(--dark);">Detalles del Equipo Solicitado</h4>
+                                <div class="form-group">
+                                    <label class="form-label">Tipo de equipo</label>
+                                    <input type="text" class="form-control" id="equipmentType" placeholder="Ej: Taladro, andamio, compresor, etc.">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Tiempo de uso estimado</label>
+                                    <input type="text" class="form-control" id="equipmentTime" placeholder="Ej: 3 días, 1 semana, hasta fin de proyecto">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Especificaciones del equipo</label>
+                                    <textarea class="form-control" id="equipmentSpecs" rows="2" placeholder="Características, capacidad, voltaje, etc."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Nivel de urgencia</label>
+                            <select class="form-select" id="reportUrgency">
+                                <option value="low">Baja (Puede esperar varios días)</option>
+                                <option value="medium">Media (Necesario en 1-2 días)</option>
+                                <option value="high">Alta (Necesario hoy)</option>
+                                <option value="urgent">Urgente (Inmediato - Detiene el trabajo)</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">¿Este reporte detiene el avance de la tarea?</label>
+                            <select class="form-select" id="blocksProgress">
+                                <option value="no">No, puedo continuar con otras actividades</option>
+                                <option value="partial">Parcialmente, reduce la productividad</option>
+                                <option value="complete">Sí, detiene completamente el trabajo</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Fecha límite requerida</label>
+                            <input type="date" class="form-control" id="requiredDate">
+                            <small style="color: var(--gray); margin-top: 5px; display: block;">
+                                ¿Para cuándo necesitas resolver este reporte?
+                            </small>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Adjuntar archivo (opcional)</label>
+                            <input type="file" class="form-control" id="fileAttachment">
+                            <small style="color: var(--gray); margin-top: 5px; display: block;">
+                                Puedes adjuntar fotos, documentos o especificaciones
+                            </small>
+                        </div>
+
+                        <button class="btn btn-primary" id="submitReportBtn">
+                            <i class="fas fa-paper-plane"></i> <span class="btn-text">Enviar Reporte</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Users Page (Admin Only) -->
+                <div id="users" class="page">
+                    <div class="page-title">
+                        <h1>Gestión de Usuarios</h1>
+                        <button class="btn btn-primary" id="addUserBtn">
+                            <i class="fas fa-user-plus"></i> <span class="btn-text">Nuevo Usuario</span>
+                        </button>
+                    </div>
+
+                    <div class="card">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Usuario</th>
+                                    <th>Nombre</th>
+                                    <th>Rol</th>
+                                    <th>Tareas Activas</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTable">
+                                <!-- Users will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Export Page (Admin Only) -->
+                <div id="export" class="page">
+                    <div class="page-title">
+                        <h1>Exportar Actividades</h1>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Exportar Datos del Sistema</div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Tipo de Exportación</label>
+                            <select class="form-select" id="exportType">
+                                <option value="all">Todas las actividades</option>
+                                <option value="completed">Solo actividades completadas</option>
+                                <option value="pending">Solo actividades pendientes</option>
+                                <option value="date-range">Por rango de fechas</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group" id="dateRangeGroup" style="display: none;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                                <div>
+                                    <label class="form-label">Fecha inicial</label>
+                                    <input type="date" class="form-control" id="startDate">
+                                </div>
+                                <div>
+                                    <label class="form-label">Fecha final</label>
+                                    <input type="date" class="form-control" id="endDate">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Formato de exportación</label>
+                            <select class="form-select" id="exportFormat">
+                                <option value="excel">Excel (.xlsx)</option>
+                                <option value="csv">CSV (.csv)</option>
+                                <option value="pdf">PDF (.pdf)</option>
+                            </select>
+                        </div>
+
+                        <div class="export-options">
+                            <button class="btn export-btn" id="exportDataBtn">
+                                <i class="fas fa-download"></i> <span class="btn-text">Exportar Datos</span>
+                            </button>
+                            <button class="btn btn-primary" id="previewDataBtn">
+                                <i class="fas fa-eye"></i> <span class="btn-text">Vista Previa</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="card" id="previewSection" style="display: none;">
+                        <div class="card-header">
+                            <div class="card-title">Vista Previa de Datos</div>
+                        </div>
+                        <div id="previewContent">
+                            <!-- Preview content will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Change Password Page -->
+                <div id="change-password" class="page">
+                    <div class="page-title">
+                        <h1>Cambiar Contraseña</h1>
+                    </div>
+
+                    <div class="card">
+                        <div class="form-group">
+                            <label class="form-label">Usuario Actual</label>
+                            <input type="text" class="form-control" id="currentUserDisplay" readonly style="background-color: #f8f9fa;">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Contraseña Actual</label>
+                            <input type="password" class="form-control" id="currentPassword" placeholder="Ingresa tu contraseña actual" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Nueva Contraseña</label>
+                            <input type="password" class="form-control" id="newPassword" placeholder="Ingresa nueva contraseña" required>
+                            <small style="color: var(--gray); margin-top: 5px; display: block;">
+                                La contraseña debe tener al menos 6 caracteres
+                            </small>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Confirmar Nueva Contraseña</label>
+                            <input type="password" class="form-control" id="confirmPassword" placeholder="Confirma la nueva contraseña" required>
+                        </div>
+                        <button class="btn btn-primary" id="updatePasswordBtn">
+                            <i class="fas fa-save"></i> <span class="btn-text">Actualizar Contraseña</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification -->
+    <div class="notification" id="notification">
+        <i class="fas fa-bell notification-icon"></i>
+        <div class="notification-content">
+            <div class="notification-title">Notificación</div>
+            <div class="notification-message" id="notificationMessage">Mensaje de notificación</div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="overlay" id="loadingOverlay">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Exportando datos...</p>
+        </div>
+    </div>
+
+    <!-- Add Task Modal -->
+    <div class="modal-overlay" id="addTaskModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">Crear Nueva Tarea</div>
+                <button class="modal-close" id="closeTaskModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="taskForm">
+                    <div class="form-group">
+                        <label class="form-label">Nombre de la actividad</label>
+                        <input type="text" class="form-control" id="taskName" placeholder="Ej: Revisar informe mensual" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Descripción</label>
+                        <textarea class="form-control" id="taskDescription" rows="3" placeholder="Describe la tarea en detalle..." required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Responsable</label>
+                        <select class="form-select" id="taskAssignee" required>
+                            <option value="">Selecciona un trabajador</option>
+                            <!-- Options will be populated dynamically -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Fecha de inicio</label>
+                        <input type="date" class="form-control" id="taskStartDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Fecha límite</label>
+                        <input type="date" class="form-control" id="taskDueDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Nivel de urgencia</label>
+                        <select class="form-select" id="taskUrgency" required>
+                            <option value="low">Baja</option>
+                            <option value="medium">Media</option>
+                            <option value="high">Alta</option>
+                            <option value="urgent">Urgente</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Adjuntar archivo (opcional)</label>
+                        <input type="file" class="form-control" id="taskFile">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="cancelTaskBtn">Cancelar</button>
+                <button class="btn btn-primary" id="saveTaskBtn">Guardar Tarea</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Task Modal -->
+    <div class="modal-overlay" id="editTaskModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">Editar Tarea</div>
+                <button class="modal-close" id="closeEditTaskModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="editTaskForm">
+                    <input type="hidden" id="editTaskId">
+                    <div class="form-group">
+                        <label class="form-label">Nombre de la actividad</label>
+                        <input type="text" class="form-control" id="editTaskName" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Descripción</label>
+                        <textarea class="form-control" id="editTaskDescription" rows="3" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Responsable</label>
+                        <select class="form-select" id="editTaskAssignee" required>
+                            <option value="">Selecciona un trabajador</option>
+                            <!-- Options will be populated dynamically -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Fecha de inicio</label>
+                        <input type="date" class="form-control" id="editTaskStartDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Fecha límite</label>
+                        <input type="date" class="form-control" id="editTaskDueDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Nivel de urgencia</label>
+                        <select class="form-select" id="editTaskUrgency" required>
+                            <option value="low">Baja</option>
+                            <option value="medium">Media</option>
+                            <option value="high">Alta</option>
+                            <option value="urgent">Urgente</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Estado</label>
+                        <select class="form-select" id="editTaskStatus" required>
+                            <option value="pending">Pendiente</option>
+                            <option value="in-progress">En Progreso</option>
+                            <option value="completed">Terminada</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="cancelEditTaskBtn">Cancelar</button>
+                <button class="btn btn-primary" id="updateTaskBtn">Actualizar Tarea</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Task Modal -->
+    <div class="modal-overlay" id="reportTaskModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title">Reportar Problema en Tarea</div>
+                <button class="modal-close" id="closeReportTaskModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="reportTaskForm">
+                    <input type="hidden" id="reportTaskId">
+                    <div class="form-group">
+                        <label class="form-label">Tipo de reporte</label>
+                        <select class="form-select" id="reportTaskType">
+                            <option value="problem">Problema en tarea</option>
+                            <option value="material">Solicitud de material</option>
+                            <option value="equipment">Solicitud de equipo</option>
+                            <option value="assistance">Solicitud de asistencia</option>
+                            <option value="other">Otro tipo de reporte</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Título del reporte</label>
+                        <input type="text" class="form-control" id="reportTaskTitle" placeholder="Ej: Falta material para completar la tarea" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Descripción detallada</label>
+                        <textarea class="form-control" id="reportTaskDescription" rows="5" placeholder="Describe el problema, los materiales que necesitas o la asistencia requerida..." required></textarea>
+                    </div>
+
+                    <!-- Sección específica para materiales -->
+                    <div id="reportMaterialSection" style="display: none;">
+                        <div class="material-details">
+                            <h4 style="margin-bottom: 1rem; color: var(--dark);">Detalles del Material Solicitado</h4>
+                            <div class="form-group">
+                                <label class="form-label">Material necesario</label>
+                                <input type="text" class="form-control" id="reportMaterialName" placeholder="Ej: Tornillos de 2 pulgadas, cable eléctrico, etc.">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Cantidad requerida</label>
+                                <input type="text" class="form-control" id="reportMaterialQuantity" placeholder="Ej: 50 unidades, 10 metros, 5 cajas">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Especificaciones técnicas</label>
+                                <textarea class="form-control" id="reportMaterialSpecs" rows="2" placeholder="Especificaciones, medidas, tipo, modelo, etc."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Nivel de urgencia</label>
+                        <select class="form-select" id="reportTaskUrgency">
+                            <option value="low">Baja (Puede esperar varios días)</option>
+                            <option value="medium">Media (Necesario en 1-2 días)</option>
+                            <option value="high">Alta (Necesario hoy)</option>
+                            <option value="urgent">Urgente (Inmediato - Detiene el trabajo)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">¿Este reporte detiene el avance de la tarea?</label>
+                        <select class="form-select" id="reportTaskBlocksProgress">
+                            <option value="no">No, puedo continuar con otras actividades</option>
+                            <option value="partial">Parcialmente, reduce la productividad</option>
+                            <option value="complete">Sí, detiene completamente el trabajo</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Fecha límite requerida</label>
+                        <input type="date" class="form-control" id="reportTaskRequiredDate">
+                        <small style="color: var(--gray); margin-top: 5px; display: block;">
+                            ¿Para cuándo necesitas resolver este reporte?
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Adjuntar archivo (opcional)</label>
+                        <input type="file" class="form-control" id="reportTaskFile">
+                        <small style="color: var(--gray); margin-top: 5px; display: block;">
+                            Puedes adjuntar fotos, documentos o especificaciones
+                        </small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="cancelReportTaskBtn">Cancelar</button>
+                <button class="btn btn-primary" id="saveReportTaskBtn">Enviar Reporte</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script>
+        // ==================== CONFIGURACIÓN INICIAL ====================
+        let currentUser = null;
+        let tasks = [];
+        let users = [];
+        let reports = [];
+        let currentPage = "dashboard";
+
+        // ==================== FIREBASE ====================
+        const firebaseConfig = {
+            apiKey: "AIzaSyCiuEJuVrLW0tF614Jvk-Wpt-rztppnqWQ",
+            authDomain: "tallerdask.firebaseapp.com",
+            databaseURL: "https://tallerdask-default-rtdb.firebaseio.com",
+            projectId: "tallerdask",
+            storageBucket: "tallerdask.firebasestorage.app",
+            messagingSenderId: "525218470301",
+            appId: "1:525218470301:web:4bc5a1f304c04c7072b774"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // Datos iniciales
+        const defaultUsers = [
+            { username: "admin", name: "Administrador", role: "admin", password: "admin123" },
+            { username: "juan", name: "Juan Pérez", role: "worker", password: "juan123" },
+            { username: "maria", name: "María García", role: "worker", password: "maria123" }
+        ];
+
+        // ==================== FIREBASE FUNCTIONS ====================
+        function loadUsersFromFirebase() {
+            database.ref('users').on('value', (snapshot) => {
+                const firebaseUsers = snapshot.val() || {};
+                users = Object.values(firebaseUsers);
+                if (users.length === 0) {
+                    createDefaultUsers();
+                }
+            });
+        }
+
+        function loadTasksFromFirebase() {
+            database.ref('tasks').on('value', (snapshot) => {
+                const firebaseTasks = snapshot.val() || {};
+                tasks = Object.values(firebaseTasks);
+                updateDashboard();
+                if (currentPage === 'tasks') loadMyTasks();
+                if (currentPage === 'manage-tasks') loadAllTasks();
+            });
+        }
+
+        function loadReportsFromFirebase() {
+            database.ref('reports').on('value', (snapshot) => {
+                const firebaseReports = snapshot.val() || {};
+                reports = Object.values(firebaseReports);
+                updateReportsBadge();
+                if (currentPage === 'reports-admin') loadReports();
+            });
+        }
+
+        function saveUsersToFirebase() {
+            const usersObj = {};
+            users.forEach(user => {
+                usersObj[user.username] = user;
+            });
+            database.ref('users').set(usersObj);
+        }
+
+        function saveTasksToFirebase() {
+            const tasksObj = {};
+            tasks.forEach(task => {
+                tasksObj[task.id] = task;
+            });
+            database.ref('tasks').set(tasksObj);
+        }
+
+        function saveReportsToFirebase() {
+            const reportsObj = {};
+            reports.forEach(report => {
+                reportsObj[report.id] = report;
+            });
+            database.ref('reports').set(reportsObj);
+        }
+
+        function createDefaultUsers() {
+            defaultUsers.forEach(user => {
+                database.ref('users/' + user.username).set(user);
+            });
+        }
+
+        function generateId() {
+            return Date.now() + Math.floor(Math.random() * 1000);
+        }
+
+        function initializeData() {
+            loadUsersFromFirebase();
+            loadTasksFromFirebase();
+            loadReportsFromFirebase();
+        }
+
+        // ==================== SISTEMA DE LOGIN ====================
+        function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            database.ref('users/' + username).once('value', (snapshot) => {
+                const user = snapshot.val();
+                
+                if (user && user.password === password) {
+                    currentUser = user;
+                    document.getElementById('loginScreen').style.display = 'none';
+                    document.getElementById('app').style.display = 'block';
+                    
+                    document.getElementById('userInitials').textContent = user.name.charAt(0);
+                    document.getElementById('userName').textContent = user.name;
+                    document.getElementById('userRole').textContent = user.role === 'admin' ? 'Administrador' : 'Trabajador';
+                    
+                    // Mostrar/ocultar elementos según permisos
+                    document.querySelectorAll('.admin-only').forEach(el => {
+                        el.style.display = user.role === 'admin' ? 'flex' : 'none';
+                    });
+                    
+                    loadUserData();
+                    showNotification(`¡Bienvenido ${user.name}!`, 'success');
+                } else {
+                    showNotification('Usuario o contraseña incorrectos', 'danger');
+                }
+            });
+        }
+
+        function handleLogout() {
+            currentUser = null;
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('app').style.display = 'none';
+            document.getElementById('loginForm').reset();
+            showNotification('Sesión cerrada correctamente', 'success');
+        }
+
+        // ==================== NAVEGACIÓN ====================
+        function switchPage(page) {
+            const adminPages = ['manage-tasks', 'reports-admin', 'users', 'export'];
+            if (adminPages.includes(page) && currentUser.role !== 'admin') {
+                showNotification('No tienes permisos para acceder a esta página', 'danger');
+                return;
+            }
+            
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.toggle('active', item.getAttribute('data-page') === page);
+            });
+            
+            document.querySelectorAll('.page').forEach(p => {
+                p.classList.toggle('active', p.id === page);
+            });
+            
+            currentPage = page;
+            
+            if (page === 'dashboard') updateDashboard();
+            else if (page === 'tasks') loadMyTasks();
+            else if (page === 'manage-tasks') loadAllTasks();
+            else if (page === 'reports') populateTaskSelect();
+            else if (page === 'reports-admin') loadReports();
+            else if (page === 'users') updateUsersTable();
+            else if (page === 'export') loadExportPage();
+            else if (page === 'change-password') loadChangePasswordPage();
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.toggle('active', tab.getAttribute('data-tab') === tabId);
+            });
+            
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.toggle('active', content.id === `tab-${tabId}`);
+            });
+            
+            if (tabId.startsWith('reports-')) {
+                filterReports(tabId.replace('reports-', ''));
+            } else {
+                filterMyTasks(tabId);
+            }
+        }
+
+        // ==================== DASHBOARD ====================
+        function updateDashboard() {
+            const userTasks = currentUser.role === 'worker' 
+                ? tasks.filter(task => task.assignee === currentUser.username)
+                : tasks;
+
+            document.getElementById('totalTasks').textContent = userTasks.length;
+            document.getElementById('pendingTasks').textContent = userTasks.filter(t => t.status === 'pending').length;
+            document.getElementById('inProgressTasks').textContent = userTasks.filter(t => t.status === 'in-progress').length;
+            document.getElementById('completedTasks').textContent = userTasks.filter(t => t.status === 'completed').length;
+            document.getElementById('totalReports').textContent = reports.filter(r => r.status === 'pending').length;
+
+            const recentTasks = userTasks.slice(0, 5);
+            const tbody = document.getElementById('recentTasksTable');
+            tbody.innerHTML = '';
+            
+            recentTasks.forEach(task => {
+                const assignee = users.find(u => u.username === task.assignee);
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${task.name}</td>
+                    <td>${assignee?.name || task.assignee}</td>
+                    <td>${formatDate(task.dueDate)}</td>
+                    <td><span class="badge badge-${task.status}">${getStatusText(task.status)}</span></td>
+                    <td><span class="badge badge-${task.urgency}">${getUrgencyText(task.urgency)}</span></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // ==================== GESTIÓN DE TAREAS ====================
+        function loadMyTasks() {
+            const userTasks = currentUser.role === 'worker'
+                ? tasks.filter(task => task.assignee === currentUser.username)
+                : tasks;
+            updateMyTasksCards(userTasks);
+        }
+
+        function filterMyTasks(filter) {
+            let filteredTasks = currentUser.role === 'worker'
+                ? tasks.filter(task => task.assignee === currentUser.username)
+                : [...tasks];
+                
+            if (filter !== 'all') {
+                filteredTasks = filteredTasks.filter(task => task.status === filter);
+            }
+            updateMyTasksCards(filteredTasks);
+        }
+
+        function updateMyTasksCards(taskList) {
+            const container = document.getElementById('myTasksContainer');
+            container.innerHTML = '';
+
+            taskList.forEach(task => {
+                const assignee = users.find(u => u.username === task.assignee);
+                const card = document.createElement('div');
+                card.className = `task-card ${task.urgency}`;
+                
+                // Mostrar archivos adjuntos si existen
+                let attachmentsHtml = '';
+                if (task.attachments && task.attachments.length > 0) {
+                    attachmentsHtml = `
+                        <div class="task-meta">
+                            <div class="task-meta-item">
+                                <i class="fas fa-paperclip"></i>
+                                <span>Archivos adjuntos:</span>
+                            </div>
+                        </div>
+                        ${task.attachments.map(attachment => `
+                            <div class="file-attachment" onclick="downloadFile('${attachment.name}', '${attachment.content}')">
+                                <i class="fas fa-file file-icon"></i>
+                                <div class="file-name">${attachment.name}</div>
+                                <div class="file-size">${formatFileSize(attachment.size)}</div>
+                                <i class="fas fa-download file-download"></i>
+                            </div>
+                        `).join('')}
+                    `;
+                }
+                
+                card.innerHTML = `
+                    <div class="task-header">
+                        <div>
+                            <div class="task-title">${task.name}</div>
+                            <div class="task-description">${task.description}</div>
+                        </div>
+                        <span class="badge badge-${task.urgency}">${getUrgencyText(task.urgency)}</span>
+                    </div>
+                    <div class="task-meta">
+                        <div class="task-meta-item">
+                            <i class="fas fa-user"></i>
+                            <span>${assignee?.name || task.assignee}</span>
+                        </div>
+                        <div class="task-meta-item">
+                            <i class="fas fa-calendar"></i>
+                            <span>${formatDate(task.dueDate)}</span>
+                        </div>
+                        <div class="task-meta-item">
+                            <i class="fas fa-flag"></i>
+                            <span>${getStatusText(task.status)}</span>
+                        </div>
+                    </div>
+                    ${attachmentsHtml}
+                    <div class="task-actions">
+                        <select class="form-select task-status" data-task-id="${task.id}">
+                            <option value="pending" ${task.status === 'pending' ? 'selected' : ''}>Pendiente</option>
+                            <option value="in-progress" ${task.status === 'in-progress' ? 'selected' : ''}>En Progreso</option>
+                            <option value="completed" ${task.status === 'completed' ? 'selected' : ''}>Terminada</option>
+                        </select>
+                        <button class="btn btn-outline report-problem-btn" data-task-id="${task.id}">
+                            <i class="fas fa-flag"></i> <span class="btn-text">Reportar</span>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            document.querySelectorAll('.task-status').forEach(select => {
+                select.addEventListener('change', function() {
+                    const taskId = this.getAttribute('data-task-id');
+                    updateTaskStatus(taskId, this.value);
+                });
+            });
+
+            document.querySelectorAll('.report-problem-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const taskId = this.getAttribute('data-task-id');
+                    openReportTaskModal(taskId);
+                });
+            });
+        }
+
+        function loadAllTasks() {
+            const tbody = document.getElementById('allTasksTable');
+            tbody.innerHTML = '';
+
+            tasks.forEach(task => {
+                const assignee = users.find(u => u.username === task.assignee);
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        <div><strong>${task.name}</strong></div>
+                        <div style="font-size: 0.9rem; color: var(--gray);">${task.description}</div>
+                    </td>
+                    <td>${assignee?.name || task.assignee}</td>
+                    <td>${formatDate(task.dueDate)}</td>
+                    <td><span class="badge badge-${task.status}">${getStatusText(task.status)}</span></td>
+                    <td><span class="badge badge-${task.urgency}">${getUrgencyText(task.urgency)}</span></td>
+                    <td>
+                        <button class="btn btn-outline edit-task-btn" data-task-id="${task.id}">
+                            <i class="fas fa-edit"></i> <span class="btn-text">Editar</span>
+                        </button>
+                        ${currentUser.role === 'admin' ? `
+                        <button class="btn btn-danger delete-task-btn" data-task-id="${task.id}">
+                            <i class="fas fa-trash"></i> <span class="btn-text">Eliminar</span>
+                        </button>
+                        ` : ''}
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            document.querySelectorAll('.edit-task-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const taskId = this.getAttribute('data-task-id');
+                    openEditTaskModal(taskId);
+                });
+            });
+
+            if (currentUser.role === 'admin') {
+                document.querySelectorAll('.delete-task-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const taskId = this.getAttribute('data-task-id');
+                        deleteTask(taskId);
+                    });
+                });
+            }
+        }
+
+        function handleSaveTask() {
+            const taskName = document.getElementById('taskName').value;
+            const taskDescription = document.getElementById('taskDescription').value;
+            const taskAssignee = document.getElementById('taskAssignee').value;
+            const taskStartDate = document.getElementById('taskStartDate').value;
+            const taskDueDate = document.getElementById('taskDueDate').value;
+            const taskUrgency = document.getElementById('taskUrgency').value;
+            const taskFile = document.getElementById('taskFile').files[0];
+
+            if (!taskName || !taskDescription || !taskAssignee) {
+                showNotification('Completa todos los campos obligatorios', 'warning');
+                return;
+            }
+
+            const newTask = {
+                id: generateId(),
+                name: taskName,
+                description: taskDescription,
+                assignee: taskAssignee,
+                startDate: taskStartDate,
+                dueDate: taskDueDate,
+                urgency: taskUrgency,
+                status: 'pending',
+                createdBy: currentUser.username
+            };
+
+            // Procesar archivo adjunto si existe
+            if (taskFile) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    newTask.attachments = [{
+                        name: taskFile.name,
+                        size: taskFile.size,
+                        type: taskFile.type,
+                        content: e.target.result
+                    }];
+                    tasks.push(newTask);
+                    saveTasksToFirebase();
+                    
+                    document.getElementById('addTaskModal').classList.remove('active');
+                    document.getElementById('taskForm').reset();
+                    
+                    updateDashboard();
+                    loadAllTasks();
+                    showNotification('Tarea creada exitosamente', 'success');
+                };
+                reader.readAsDataURL(taskFile);
+            } else {
+                tasks.push(newTask);
+                saveTasksToFirebase();
+                
+                document.getElementById('addTaskModal').classList.remove('active');
+                document.getElementById('taskForm').reset();
+                
+                updateDashboard();
+                loadAllTasks();
+                showNotification('Tarea creada exitosamente', 'success');
+            }
+        }
+
+        function openEditTaskModal(taskId) {
+            const task = tasks.find(t => t.id == taskId);
+            if (task) {
+                document.getElementById('editTaskId').value = task.id;
+                document.getElementById('editTaskName').value = task.name;
+                document.getElementById('editTaskDescription').value = task.description;
+                document.getElementById('editTaskAssignee').value = task.assignee;
+                document.getElementById('editTaskStartDate').value = task.startDate;
+                document.getElementById('editTaskDueDate').value = task.dueDate;
+                document.getElementById('editTaskUrgency').value = task.urgency;
+                document.getElementById('editTaskStatus').value = task.status;
+                
+                populateAssigneeSelect();
+                document.getElementById('editTaskModal').classList.add('active');
+            }
+        }
+
+        function handleUpdateTask() {
+            const taskId = document.getElementById('editTaskId').value;
+            const taskIndex = tasks.findIndex(t => t.id == taskId);
+            
+            if (taskIndex !== -1) {
+                tasks[taskIndex] = {
+                    ...tasks[taskIndex],
+                    name: document.getElementById('editTaskName').value,
+                    description: document.getElementById('editTaskDescription').value,
+                    assignee: document.getElementById('editTaskAssignee').value,
+                    startDate: document.getElementById('editTaskStartDate').value,
+                    dueDate: document.getElementById('editTaskDueDate').value,
+                    urgency: document.getElementById('editTaskUrgency').value,
+                    status: document.getElementById('editTaskStatus').value
+                };
+                
+                saveTasksToFirebase();
+                document.getElementById('editTaskModal').classList.remove('active');
+                
+                updateDashboard();
+                loadAllTasks();
+                if (currentPage === 'tasks') loadMyTasks();
+                
+                showNotification('Tarea actualizada exitosamente', 'success');
+            }
+        }
+
+        function updateTaskStatus(taskId, newStatus) {
+            const taskIndex = tasks.findIndex(t => t.id == taskId);
+            if (taskIndex !== -1) {
+                tasks[taskIndex].status = newStatus;
+                saveTasksToFirebase();
+                updateDashboard();
+                showNotification('Estado de tarea actualizado', 'success');
+            }
+        }
+
+        function deleteTask(taskId) {
+            if (confirm('¿Estás seguro de eliminar esta tarea?')) {
+                tasks = tasks.filter(t => t.id != taskId);
+                saveTasksToFirebase();
+                updateDashboard();
+                loadAllTasks();
+                showNotification('Tarea eliminada', 'success');
+            }
+        }
+
+        // ==================== GESTIÓN DE USUARIOS ====================
+        function updateUsersTable() {
+            const tbody = document.getElementById('usersTable');
+            tbody.innerHTML = '';
+
+            users.forEach(user => {
+                const activeTasks = tasks.filter(t => t.assignee === user.username && t.status !== 'completed').length;
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        <div><strong>${user.username}</strong></div>
+                        <small style="color: var(--gray);">Creado: ${new Date().toLocaleDateString()}</small>
+                    </td>
+                    <td>${user.name}</td>
+                    <td>
+                        <span class="badge ${user.role === 'admin' ? 'badge-urgent' : 'badge-medium'}">
+                            ${user.role === 'admin' ? 'Administrador' : 'Trabajador'}
+                        </span>
+                    </td>
+                    <td>${activeTasks}</td>
+                    <td>
+                        ${currentUser.role === 'admin' ? `
+                        <button class="btn btn-outline change-password-btn" data-username="${user.username}">
+                            <i class="fas fa-key"></i> <span class="btn-text">Cambiar Contraseña</span>
+                        </button>
+                        ${user.username !== 'admin' ? `
+                        <button class="btn btn-danger delete-user-btn" data-username="${user.username}">
+                            <i class="fas fa-trash"></i> <span class="btn-text">Eliminar</span>
+                        </button>
+                        ` : ''}
+                        ` : `
+                        <span style="color: var(--gray); font-size: 0.9rem;">Solo administradores</span>
+                        `}
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            if (currentUser.role === 'admin') {
+                document.querySelectorAll('.change-password-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const username = this.getAttribute('data-username');
+                        const newPassword = prompt(`Nueva contraseña para ${username}:`);
+                        if (newPassword && newPassword.length >= 4) {
+                            changeUserPassword(username, newPassword);
+                        }
+                    });
+                });
+
+                document.querySelectorAll('.delete-user-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const username = this.getAttribute('data-username');
+                        if (confirm(`¿Eliminar usuario ${username}?`)) {
+                            deleteUser(username);
+                        }
+                    });
+                });
+            }
+        }
+
+        function addNewUser() {
+            // Solo admin puede agregar usuarios
+            if (currentUser.role !== 'admin') {
+                showNotification('Solo los administradores pueden agregar usuarios', 'danger');
+                return;
+            }
+
+            const username = prompt('Nombre de usuario:');
+            if (!username) return;
+            
+            const name = prompt('Nombre completo:');
+            if (!name) return;
+            
+            const role = confirm('¿Es administrador? (OK=Sí, Cancelar=No)') ? 'admin' : 'worker';
+            const password = prompt('Contraseña:') || '123456';
+            
+            if (users.find(u => u.username === username)) {
+                showNotification('El usuario ya existe', 'danger');
+                return;
+            }
+            
+            users.push({ username, name, role, password });
+            saveUsersToFirebase();
+            updateUsersTable();
+            showNotification('Usuario creado exitosamente', 'success');
+        }
+
+        function changeUserPassword(username, newPassword) {
+            // Solo admin puede cambiar contraseñas de otros usuarios
+            if (currentUser.role !== 'admin' && username !== currentUser.username) {
+                showNotification('Solo puedes cambiar tu propia contraseña', 'danger');
+                return;
+            }
+
+            const user = users.find(u => u.username === username);
+            if (user) {
+                user.password = newPassword;
+                saveUsersToFirebase();
+                showNotification('Contraseña actualizada', 'success');
+            }
+        }
+
+        function deleteUser(username) {
+            // Solo admin puede eliminar usuarios
+            if (currentUser.role !== 'admin') {
+                showNotification('Solo los administradores pueden eliminar usuarios', 'danger');
+                return;
+            }
+
+            if (username === currentUser.username) {
+                showNotification('No puedes eliminar tu propio usuario', 'danger');
+                return;
+            }
+            
+            const userTasks = tasks.filter(t => t.assignee === username && t.status !== 'completed');
+            if (userTasks.length > 0) {
+                showNotification('No se puede eliminar usuario con tareas activas', 'danger');
+                return;
+            }
+            
+            users = users.filter(u => u.username !== username);
+            saveUsersToFirebase();
+            updateUsersTable();
+            showNotification('Usuario eliminado', 'success');
+        }
+
+        // ==================== REPORTES MEJORADOS ====================
+        function populateTaskSelect() {
+            const select = document.getElementById('taskSelect');
+            select.innerHTML = '<option value="">Selecciona una tarea (opcional)</option>';
+            
+            const userTasks = currentUser.role === 'worker'
+                ? tasks.filter(t => t.assignee === currentUser.username)
+                : tasks;
+                
+            userTasks.forEach(task => {
+                const option = document.createElement('option');
+                option.value = task.id;
+                option.textContent = task.name;
+                select.appendChild(option);
+            });
+        }
+
+        function handleReportTypeChange() {
+            const reportType = document.getElementById('reportType').value;
+            const materialSection = document.getElementById('materialSection');
+            const equipmentSection = document.getElementById('equipmentSection');
+            
+            // Ocultar todas las secciones primero
+            materialSection.style.display = 'none';
+            equipmentSection.style.display = 'none';
+            
+            // Mostrar secciones según el tipo
+            if (reportType === 'material') {
+                materialSection.style.display = 'block';
+            } else if (reportType === 'equipment') {
+                equipmentSection.style.display = 'block';
+            }
+        }
+
+        function handleSubmitReport() {
+            const title = document.getElementById('reportTitle').value;
+            const description = document.getElementById('problemDescription').value;
+            const type = document.getElementById('reportType').value;
+            const urgency = document.getElementById('reportUrgency').value;
+            const taskId = document.getElementById('taskSelect').value;
+            const blocksProgress = document.getElementById('blocksProgress').value;
+            const requiredDate = document.getElementById('requiredDate').value;
+            const fileAttachment = document.getElementById('fileAttachment').files[0];
+
+            if (!title || !description) {
+                showNotification('Completa todos los campos obligatorios', 'warning');
+                return;
+            }
+
+            // Recolectar datos específicos según el tipo de reporte
+            let additionalData = {};
+            
+            if (type === 'material') {
+                additionalData = {
+                    materialName: document.getElementById('materialName').value,
+                    materialQuantity: document.getElementById('materialQuantity').value,
+                    materialSpecs: document.getElementById('materialSpecs').value
+                };
+            } else if (type === 'equipment') {
+                additionalData = {
+                    equipmentType: document.getElementById('equipmentType').value,
+                    equipmentTime: document.getElementById('equipmentTime').value,
+                    equipmentSpecs: document.getElementById('equipmentSpecs').value
+                };
+            }
+
+            const newReport = {
+                id: generateId(),
+                title,
+                description,
+                type,
+                urgency,
+                taskId: taskId ? taskId : null,
+                reporter: currentUser.username,
+                status: 'pending',
+                blocksProgress,
+                requiredDate,
+                additionalData,
+                createdAt: new Date().toISOString()
+            };
+
+            // Procesar archivo adjunto si existe
+            if (fileAttachment) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    newReport.attachments = [{
+                        name: fileAttachment.name,
+                        size: fileAttachment.size,
+                        type: fileAttachment.type,
+                        content: e.target.result
+                    }];
+                    reports.push(newReport);
+                    saveReportsToFirebase();
+                    
+                    // Limpiar formulario
+                    document.getElementById('reportTitle').value = '';
+                    document.getElementById('problemDescription').value = '';
+                    document.getElementById('materialName').value = '';
+                    document.getElementById('materialQuantity').value = '';
+                    document.getElementById('materialSpecs').value = '';
+                    document.getElementById('equipmentType').value = '';
+                    document.getElementById('equipmentTime').value = '';
+                    document.getElementById('equipmentSpecs').value = '';
+                    document.getElementById('requiredDate').value = '';
+                    document.getElementById('fileAttachment').value = '';
+                    
+                    showNotification('Reporte enviado exitosamente', 'success');
+                    updateReportsBadge();
+                };
+                reader.readAsDataURL(fileAttachment);
+            } else {
+                reports.push(newReport);
+                saveReportsToFirebase();
+                
+                // Limpiar formulario
+                document.getElementById('reportTitle').value = '';
+                document.getElementById('problemDescription').value = '';
+                document.getElementById('materialName').value = '';
+                document.getElementById('materialQuantity').value = '';
+                document.getElementById('materialSpecs').value = '';
+                document.getElementById('equipmentType').value = '';
+                document.getElementById('equipmentTime').value = '';
+                document.getElementById('equipmentSpecs').value = '';
+                document.getElementById('requiredDate').value = '';
+                
+                showNotification('Reporte enviado exitosamente', 'success');
+                updateReportsBadge();
+            }
+        }
+
+        function openReportTaskModal(taskId) {
+            const task = tasks.find(t => t.id == taskId);
+            if (task) {
+                document.getElementById('reportTaskId').value = task.id;
+                document.getElementById('reportTaskModal').classList.add('active');
+            }
+        }
+
+        function handleReportTaskTypeChange() {
+            const reportType = document.getElementById('reportTaskType').value;
+            const materialSection = document.getElementById('reportMaterialSection');
+            
+            // Ocultar todas las secciones primero
+            materialSection.style.display = 'none';
+            
+            // Mostrar secciones según el tipo
+            if (reportType === 'material') {
+                materialSection.style.display = 'block';
+            }
+        }
+
+        function handleSaveReportTask() {
+            const taskId = document.getElementById('reportTaskId').value;
+            const title = document.getElementById('reportTaskTitle').value;
+            const description = document.getElementById('reportTaskDescription').value;
+            const type = document.getElementById('reportTaskType').value;
+            const urgency = document.getElementById('reportTaskUrgency').value;
+            const blocksProgress = document.getElementById('reportTaskBlocksProgress').value;
+            const requiredDate = document.getElementById('reportTaskRequiredDate').value;
+            const fileAttachment = document.getElementById('reportTaskFile').files[0];
+
+            if (!title || !description) {
+                showNotification('Completa todos los campos obligatorios', 'warning');
+                return;
+            }
+
+            // Recolectar datos específicos según el tipo de reporte
+            let additionalData = {};
+            
+            if (type === 'material') {
+                additionalData = {
+                    materialName: document.getElementById('reportMaterialName').value,
+                    materialQuantity: document.getElementById('reportMaterialQuantity').value,
+                    materialSpecs: document.getElementById('reportMaterialSpecs').value
+                };
+            } else if (type === 'equipment') {
+                additionalData = {
+                    equipmentType: document.getElementById('reportEquipmentType')?.value || '',
+                    equipmentTime: document.getElementById('reportEquipmentTime')?.value || '',
+                    equipmentSpecs: document.getElementById('reportEquipmentSpecs')?.value || ''
+                };
+            }
+
+            const newReport = {
+                id: generateId(),
+                title,
+                description,
+                type,
+                urgency,
+                taskId: taskId,
+                reporter: currentUser.username,
+                status: 'pending',
+                blocksProgress,
+                requiredDate,
+                additionalData,
+                createdAt: new Date().toISOString()
+            };
+
+            // Procesar archivo adjunto si existe
+            if (fileAttachment) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    newReport.attachments = [{
+                        name: fileAttachment.name,
+                        size: fileAttachment.size,
+                        type: fileAttachment.type,
+                        content: e.target.result
+                    }];
+                    reports.push(newReport);
+                    saveReportsToFirebase();
+                    
+                    document.getElementById('reportTaskModal').classList.remove('active');
+                    document.getElementById('reportTaskForm').reset();
+                    
+                    showNotification('Reporte enviado exitosamente', 'success');
+                    updateReportsBadge();
+                };
+                reader.readAsDataURL(fileAttachment);
+            } else {
+                reports.push(newReport);
+                saveReportsToFirebase();
+                
+                document.getElementById('reportTaskModal').classList.remove('active');
+                document.getElementById('reportTaskForm').reset();
+                
+                showNotification('Reporte enviado exitosamente', 'success');
+                updateReportsBadge();
+            }
+        }
+
+        function loadReports() {
+            const container = document.getElementById('reportsContainer');
+            container.innerHTML = '';
+
+            const filteredReports = reports.filter(r => r.status === 'pending');
+            
+            if (filteredReports.length === 0) {
+                container.innerHTML = '<div class="card" style="text-align: center; padding: 2rem; color: var(--gray);">No hay reportes pendientes</div>';
+                return;
+            }
+
+            filteredReports.forEach(report => {
+                const reporter = users.find(u => u.username === report.reporter);
+                const task = tasks.find(t => t.id == report.taskId);
+                const card = document.createElement('div');
+                card.className = 'report-card';
+                
+                let additionalInfo = '';
+                
+                // Mostrar información adicional según el tipo de reporte
+                if (report.type === 'material' && report.additionalData) {
+                    additionalInfo = `
+                        <div class="material-details">
+                            <strong>Material solicitado:</strong> ${report.additionalData.materialName}<br>
+                            <strong>Cantidad:</strong> ${report.additionalData.materialQuantity}<br>
+                            <strong>Especificaciones:</strong> ${report.additionalData.materialSpecs || 'No especificado'}
+                        </div>
+                    `;
+                } else if (report.type === 'equipment' && report.additionalData) {
+                    additionalInfo = `
+                        <div class="material-details">
+                            <strong>Equipo solicitado:</strong> ${report.additionalData.equipmentType}<br>
+                            <strong>Tiempo de uso:</strong> ${report.additionalData.equipmentTime}<br>
+                            <strong>Especificaciones:</strong> ${report.additionalData.equipmentSpecs || 'No especificado'}
+                        </div>
+                    `;
+                }
+
+                // Mostrar archivos adjuntos si existen
+                let attachmentsHtml = '';
+                if (report.attachments && report.attachments.length > 0) {
+                    attachmentsHtml = `
+                        <div class="task-meta">
+                            <div class="task-meta-item">
+                                <i class="fas fa-paperclip"></i>
+                                <span>Archivos adjuntos:</span>
+                            </div>
+                        </div>
+                        ${report.attachments.map(attachment => `
+                            <div class="file-attachment" onclick="downloadFile('${attachment.name}', '${attachment.content}')">
+                                <i class="fas fa-file file-icon"></i>
+                                <div class="file-name">${attachment.name}</div>
+                                <div class="file-size">${formatFileSize(attachment.size)}</div>
+                                <i class="fas fa-download file-download"></i>
+                            </div>
+                        `).join('')}
+                    `;
+                }
+
+                card.innerHTML = `
+                    <div class="report-header">
+                        <div class="report-title">${report.title}</div>
+                        <div>
+                            <span class="badge badge-${report.urgency}">${getUrgencyText(report.urgency)}</span>
+                            <span class="badge badge-new">${getReportTypeText(report.type)}</span>
+                        </div>
+                    </div>
+                    <div class="report-meta">
+                        <div class="report-meta-item">
+                            <i class="fas fa-user"></i>
+                            <span>${reporter?.name || report.reporter}</span>
+                        </div>
+                        <div class="report-meta-item">
+                            <i class="fas fa-calendar"></i>
+                            <span>${formatDateTime(report.createdAt)}</span>
+                        </div>
+                        <div class="report-meta-item">
+                            <i class="fas fa-tag"></i>
+                            <span>${getReportTypeText(report.type)}</span>
+                        </div>
+                        ${task ? `
+                        <div class="report-meta-item">
+                            <i class="fas fa-tasks"></i>
+                            <span>${task.name}</span>
+                        </div>
+                        ` : ''}
+                        <div class="report-meta-item">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span>${getBlocksProgressText(report.blocksProgress)}</span>
+                        </div>
+                    </div>
+                    <div class="report-description">${report.description}</div>
+                    ${additionalInfo}
+                    ${attachmentsHtml}
+                    ${report.requiredDate ? `
+                    <div class="report-meta-item">
+                        <i class="fas fa-clock"></i>
+                        <span><strong>Fecha límite requerida:</strong> ${formatDate(report.requiredDate)}</span>
+                    </div>
+                    ` : ''}
+                    <div class="report-actions">
+                        <button class="btn btn-success resolve-report-btn" data-report-id="${report.id}">
+                            <i class="fas fa-check"></i> <span class="btn-text">Resolver</span>
+                        </button>
+                        ${currentUser.role === 'admin' ? `
+                        <button class="btn btn-danger delete-report-btn" data-report-id="${report.id}">
+                            <i class="fas fa-trash"></i> <span class="btn-text">Eliminar</span>
+                        </button>
+                        ` : ''}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+
+            document.querySelectorAll('.resolve-report-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const reportId = this.getAttribute('data-report-id');
+                    resolveReport(reportId);
+                });
+            });
+
+            if (currentUser.role === 'admin') {
+                document.querySelectorAll('.delete-report-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const reportId = this.getAttribute('data-report-id');
+                        deleteReport(reportId);
+                    });
+                });
+            }
+        }
+
+        function filterReports(filter) {
+            let filteredReports = [...reports];
+            if (filter === 'pending') filteredReports = reports.filter(r => r.status === 'pending');
+            else if (filter === 'resolved') filteredReports = reports.filter(r => r.status === 'resolved');
+        }
+
+        function resolveReport(reportId) {
+            const reportIndex = reports.findIndex(r => r.id == reportId);
+            if (reportIndex !== -1) {
+                reports[reportIndex].status = 'resolved';
+                saveReportsToFirebase();
+                loadReports();
+                updateReportsBadge();
+                showNotification('Reporte resuelto', 'success');
+            }
+        }
+
+        function deleteReport(reportId) {
+            if (confirm('¿Eliminar este reporte?')) {
+                reports = reports.filter(r => r.id != reportId);
+                saveReportsToFirebase();
+                loadReports();
+                updateReportsBadge();
+                showNotification('Reporte eliminado', 'success');
+            }
+        }
+
+        function updateReportsBadge() {
+            const pendingReports = reports.filter(r => r.status === 'pending').length;
+            const badge = document.getElementById('reportsBadge');
+            if (pendingReports > 0) {
+                badge.textContent = pendingReports;
+                badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        // ==================== EXPORTACIÓN ====================
+        function loadExportPage() {
+            // Mostrar/ocultar rango de fechas según selección
+            document.getElementById('exportType').addEventListener('change', function() {
+                const dateRangeGroup = document.getElementById('dateRangeGroup');
+                dateRangeGroup.style.display = this.value === 'date-range' ? 'block' : 'none';
+            });
+
+            // Establecer fechas por defecto
+            const today = new Date();
+            const lastWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+            document.getElementById('startDate').value = lastWeek.toISOString().split('T')[0];
+            document.getElementById('endDate').value = today.toISOString().split('T')[0];
+        }
+
+        function exportData() {
+            const exportType = document.getElementById('exportType').value;
+            const exportFormat = document.getElementById('exportFormat').value;
+            
+            let filteredTasks = [...tasks];
+            
+            // Filtrar tareas según el tipo seleccionado
+            if (exportType === 'completed') {
+                filteredTasks = tasks.filter(task => task.status === 'completed');
+            } else if (exportType === 'pending') {
+                filteredTasks = tasks.filter(task => task.status !== 'completed');
+            } else if (exportType === 'date-range') {
+                const startDate = document.getElementById('startDate').value;
+                const endDate = document.getElementById('endDate').value;
+                
+                if (!startDate || !endDate) {
+                    showNotification('Selecciona un rango de fechas válido', 'warning');
+                    return;
+                }
+                
+                filteredTasks = tasks.filter(task => {
+                    const taskDate = new Date(task.dueDate);
+                    const start = new Date(startDate);
+                    const end = new Date(endDate);
+                    return taskDate >= start && taskDate <= end;
+                });
+            }
+
+            if (filteredTasks.length === 0) {
+                showNotification('No hay datos para exportar con los filtros seleccionados', 'warning');
+                return;
+            }
+
+            // Mostrar loading
+            document.getElementById('loadingOverlay').classList.add('active');
+
+            // Simular procesamiento
+            setTimeout(() => {
+                let content, mimeType, filename;
+
+                if (exportFormat === 'csv') {
+                    content = generateCSV(filteredTasks);
+                    mimeType = 'text/csv';
+                    filename = `actividades_${new Date().toISOString().split('T')[0]}.csv`;
+                } else if (exportFormat === 'excel') {
+                    content = generateExcel(filteredTasks);
+                    mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+                    filename = `actividades_${new Date().toISOString().split('T')[0]}.xlsx`;
+                } else {
+                    content = generatePDF(filteredTasks);
+                    mimeType = 'application/pdf';
+                    filename = `actividades_${new Date().toISOString().split('T')[0]}.pdf`;
+                }
+
+                downloadFile(content, filename, mimeType);
+                document.getElementById('loadingOverlay').classList.remove('active');
+                showNotification('Datos exportados exitosamente', 'success');
+            }, 2000);
+        }
+
+        function generateCSV(tasks) {
+            const headers = ['Tarea', 'Descripción', 'Asignado a', 'Fecha Inicio', 'Fecha Límite', 'Estado', 'Urgencia', 'Creado por'];
+            let csv = headers.join(',') + '\n';
+            
+            tasks.forEach(task => {
+                const assignee = users.find(u => u.username === task.assignee)?.name || task.assignee;
+                const row = [
+                    `"${task.name}"`,
+                    `"${task.description}"`,
+                    `"${assignee}"`,
+                    `"${formatDate(task.startDate)}"`,
+                    `"${formatDate(task.dueDate)}"`,
+                    `"${getStatusText(task.status)}"`,
+                    `"${getUrgencyText(task.urgency)}"`,
+                    `"${task.createdBy}"`
+                ];
+                csv += row.join(',') + '\n';
+            });
+            
+            return csv;
+        }
+
+        function generateExcel(tasks) {
+            // Para Excel simple, usamos CSV con extensión .xlsx
+            return generateCSV(tasks);
+        }
+
+        function generatePDF(tasks) {
+            // Para PDF simple, generamos texto formateado
+            let pdfContent = 'REPORTE DE ACTIVIDADES\n\n';
+            pdfContent += `Generado: ${new Date().toLocaleString()}\n`;
+            pdfContent += `Total de actividades: ${tasks.length}\n\n`;
+            
+            tasks.forEach((task, index) => {
+                const assignee = users.find(u => u.username === task.assignee)?.name || task.assignee;
+                pdfContent += `${index + 1}. ${task.name}\n`;
+                pdfContent += `   Descripción: ${task.description}\n`;
+                pdfContent += `   Asignado a: ${assignee}\n`;
+                pdfContent += `   Fechas: ${formatDate(task.startDate)} - ${formatDate(task.dueDate)}\n`;
+                pdfContent += `   Estado: ${getStatusText(task.status)} | Urgencia: ${getUrgencyText(task.urgency)}\n\n`;
+            });
+            
+            return pdfContent;
+        }
+
+        function downloadFile(content, filename, mimeType) {
+            const blob = new Blob([content], { type: mimeType });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
+
+        // Función para descargar archivos adjuntos
+        function downloadFile(filename, content) {
+            const link = document.createElement('a');
+            link.href = content;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showNotification(`Archivo ${filename} descargado`, 'success');
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function previewData() {
+            const exportType = document.getElementById('exportType').value;
+            let filteredTasks = [...tasks];
+            
+            if (exportType === 'completed') {
+                filteredTasks = tasks.filter(task => task.status === 'completed');
+            } else if (exportType === 'pending') {
+                filteredTasks = tasks.filter(task => task.status !== 'completed');
+            } else if (exportType === 'date-range') {
+                const startDate = document.getElementById('startDate').value;
+                const endDate = document.getElementById('endDate').value;
+                
+                if (startDate && endDate) {
+                    filteredTasks = tasks.filter(task => {
+                        const taskDate = new Date(task.dueDate);
+                        const start = new Date(startDate);
+                        const end = new Date(endDate);
+                        return taskDate >= start && taskDate <= end;
+                    });
+                }
+            }
+
+            const previewSection = document.getElementById('previewSection');
+            const previewContent = document.getElementById('previewContent');
+            
+            if (filteredTasks.length === 0) {
+                previewContent.innerHTML = '<p style="text-align: center; color: var(--gray); padding: 2rem;">No hay datos para mostrar con los filtros seleccionados</p>';
+            } else {
+                let html = `
+                    <div style="margin-bottom: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                        <strong>Total de actividades: ${filteredTasks.length}</strong>
+                    </div>
+                    <div style="overflow-x: auto;">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Tarea</th>
+                                    <th>Asignado a</th>
+                                    <th>Fecha Límite</th>
+                                    <th>Estado</th>
+                                    <th>Urgencia</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                filteredTasks.forEach(task => {
+                    const assignee = users.find(u => u.username === task.assignee)?.name || task.assignee;
+                    html += `
+                        <tr>
+                            <td>${task.name}</td>
+                            <td>${assignee}</td>
+                            <td>${formatDate(task.dueDate)}</td>
+                            <td><span class="badge badge-${task.status}">${getStatusText(task.status)}</span></td>
+                            <td><span class="badge badge-${task.urgency}">${getUrgencyText(task.urgency)}</span></td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</tbody></table></div>';
+                previewContent.innerHTML = html;
+            }
+            
+            previewSection.style.display = 'block';
+        }
+
+        // ==================== CAMBIO DE CONTRASEÑA ====================
+        function loadChangePasswordPage() {
+            document.getElementById('currentUserDisplay').value = currentUser.username;
+            document.getElementById('currentPassword').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+        }
+
+        function handlePasswordUpdate() {
+            const currentPassword = document.getElementById('currentPassword').value;
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                showNotification('Completa todos los campos', 'warning');
+                return;
+            }
+
+            if (currentPassword !== currentUser.password) {
+                showNotification('La contraseña actual es incorrecta', 'danger');
+                return;
+            }
+
+            if (newPassword.length < 6) {
+                showNotification('La nueva contraseña debe tener al menos 6 caracteres', 'warning');
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                showNotification('Las contraseñas nuevas no coinciden', 'danger');
+                return;
+            }
+
+            const userIndex = users.findIndex(u => u.username === currentUser.username);
+            if (userIndex !== -1) {
+                users[userIndex].password = newPassword;
+                currentUser.password = newPassword;
+                
+                saveUsersToFirebase();
+                
+                document.getElementById('currentPassword').value = '';
+                document.getElementById('newPassword').value = '';
+                document.getElementById('confirmPassword').value = '';
+                
+                showNotification('Contraseña actualizada exitosamente', 'success');
+            }
+        }
+
+        // ==================== UTILIDADES ====================
+        function populateAssigneeSelect() {
+            const selects = ['taskAssignee', 'editTaskAssignee'];
+            selects.forEach(selectId => {
+                const select = document.getElementById(selectId);
+                if (select) {
+                    select.innerHTML = '<option value="">Selecciona un trabajador</option>';
+                    users.filter(u => u.role === 'worker').forEach(user => {
+                        const option = document.createElement('option');
+                        option.value = user.username;
+                        option.textContent = user.name;
+                        select.appendChild(option);
+                    });
+                }
+            });
+        }
+
+        function loadUserData() {
+            updateDashboard();
+            loadMyTasks();
+            if (currentUser.role === 'admin') {
+                loadAllTasks();
+                updateUsersTable();
+                updateReportsBadge();
+            }
+        }
+
+        function showNotification(message, type) {
+            const notification = document.getElementById('notification');
+            const messageEl = document.getElementById('notificationMessage');
+            
+            messageEl.textContent = message;
+            notification.className = `notification notification-${type}`;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 4000);
+        }
+
+        function formatDate(dateString) {
+            return new Date(dateString).toLocaleDateString('es-ES');
+        }
+
+        function formatDateTime(dateTimeString) {
+            return new Date(dateTimeString).toLocaleString('es-ES');
+        }
+
+        function getStatusText(status) {
+            const statusMap = {
+                'pending': 'Pendiente',
+                'in-progress': 'En Progreso', 
+                'completed': 'Terminada'
+            };
+            return statusMap[status] || status;
+        }
+
+        function getUrgencyText(urgency) {
+            const urgencyMap = {
+                'low': 'Baja',
+                'medium': 'Media',
+                'high': 'Alta',
+                'urgent': 'Urgente'
+            };
+            return urgencyMap[urgency] || urgency;
+        }
+
+        function getReportTypeText(type) {
+            const typeMap = {
+                'problem': 'Problema',
+                'material': 'Material',
+                'equipment': 'Equipo',
+                'assistance': 'Asistencia',
+                'other': 'Otro'
+            };
+            return typeMap[type] || type;
+        }
+
+        function getBlocksProgressText(blocks) {
+            const blocksMap = {
+                'no': 'No detiene',
+                'partial': 'Disminuye productividad',
+                'complete': 'Detiene completamente'
+            };
+            return blocksMap[blocks] || blocks;
+        }
+
+        // ==================== INICIALIZACIÓN ====================
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeData();
+            
+            document.getElementById('currentDate').textContent = new Date().toLocaleDateString('es-ES', {
+                weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+            });
+
+            const now = new Date();
+            const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+            document.getElementById('taskStartDate').valueAsDate = now;
+            document.getElementById('taskDueDate').valueAsDate = nextWeek;
+
+            // Event Listeners
+            document.getElementById('loginForm').addEventListener('submit', handleLogin);
+            document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+            
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    switchPage(item.getAttribute('data-page'));
+                    if (window.innerWidth <= 992) {
+                        document.getElementById('sidebar').classList.remove('active');
+                    }
+                });
+            });
+
+            document.getElementById('addTaskBtn').addEventListener('click', () => {
+                populateAssigneeSelect();
+                document.getElementById('addTaskModal').classList.add('active');
+            });
+
+            document.getElementById('closeTaskModal').addEventListener('click', () => {
+                document.getElementById('addTaskModal').classList.remove('active');
+            });
+
+            document.getElementById('cancelTaskBtn').addEventListener('click', () => {
+                document.getElementById('addTaskModal').classList.remove('active');
+                document.getElementById('taskForm').reset();
+            });
+
+            document.getElementById('saveTaskBtn').addEventListener('click', handleSaveTask);
+            document.getElementById('viewAllTasksBtn').addEventListener('click', () => switchPage('tasks'));
+            
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => switchTab(tab.getAttribute('data-tab')));
+            });
+
+            // Reportes mejorados
+            document.getElementById('reportType').addEventListener('change', handleReportTypeChange);
+            document.getElementById('submitReportBtn').addEventListener('click', handleSubmitReport);
+            
+            document.getElementById('addUserBtn').addEventListener('click', addNewUser);
+            document.getElementById('menuToggle').addEventListener('click', () => {
+                document.getElementById('sidebar').classList.toggle('active');
+            });
+
+            // Edit Task Modal
+            document.getElementById('closeEditTaskModal').addEventListener('click', () => {
+                document.getElementById('editTaskModal').classList.remove('active');
+            });
+
+            document.getElementById('cancelEditTaskBtn').addEventListener('click', () => {
+                document.getElementById('editTaskModal').classList.remove('active');
+            });
+
+            document.getElementById('updateTaskBtn').addEventListener('click', handleUpdateTask);
+
+            // Report Task Modal
+            document.getElementById('reportTaskType').addEventListener('change', handleReportTaskTypeChange);
+            document.getElementById('closeReportTaskModal').addEventListener('click', () => {
+                document.getElementById('reportTaskModal').classList.remove('active');
+            });
+
+            document.getElementById('cancelReportTaskBtn').addEventListener('click', () => {
+                document.getElementById('reportTaskModal').classList.remove('active');
+                document.getElementById('reportTaskForm').reset();
+            });
+
+            document.getElementById('saveReportTaskBtn').addEventListener('click', handleSaveReportTask);
+
+            // Export functionality
+            document.getElementById('exportDataBtn').addEventListener('click', exportData);
+            document.getElementById('previewDataBtn').addEventListener('click', previewData);
+
+            // Change password
+            document.getElementById('updatePasswordBtn').addEventListener('click', handlePasswordUpdate);
+
+            // Cerrar sidebar al hacer clic fuera en móvil
+            document.addEventListener('click', (e) => {
+                if (window.innerWidth <= 992 && 
+                    !document.getElementById('sidebar').contains(e.target) && 
+                    !document.getElementById('menuToggle').contains(e.target) &&
+                    document.getElementById('sidebar').classList.contains('active')) {
+                    document.getElementById('sidebar').classList.remove('active');
+                }
+            });
+
+            // Inicializar con pantalla de login
+            document.getElementById('loginScreen').style.display = 'flex';
+            document.getElementById('app').style.display = 'none';
+        });
+    </script>
+</body>
+</html>
